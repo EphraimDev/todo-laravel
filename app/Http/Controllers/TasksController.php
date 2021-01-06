@@ -51,7 +51,7 @@ class TasksController extends Controller
                 'note' => $request->note,
                 'time' => $request->time,
                 'date' => $request->date,
-                'status' => $request->status ?? 'not started'
+                'status' => $this->validStatus($request->status)
             ]);
 
             return response()->json([
@@ -117,15 +117,15 @@ class TasksController extends Controller
                 return response()->json([
                     'status' => 'failed',
                     'message' => 'Todo does not belong to authenticated user'
-                ], 400);
+                ], 401);
             }
-
+            
             $task->update([
                 'task' => $request->task,
                 'note' => $request->note,
                 'date' => $request->date,
                 'time' => $request->time,
-                'status' => $request->status ?? $task->status
+                'status' => $this->validStatus($request->status)
             ]);
 
             return response()->json([
@@ -156,15 +156,15 @@ class TasksController extends Controller
             return response()->json([
                 'status' => 'failed',
                 'message' => 'Todo does not belong to authenticated user'
-            ], 400);
+            ], 401);
         }
-        
+
         $task->delete();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Todo deleted successfully'
-        ], 400);
+        ], 200);
     }
 
     public function validateRequest($request)
@@ -182,5 +182,11 @@ class TasksController extends Controller
         $validator = Validator::make($request->all(), $rules, $messages);
 
         return $validator;
+    }
+
+    public function validStatus($status)
+    {
+        $status_arr = array('not started', 'started', 'completed');
+        return in_array($status, $status_arr) ? $status : 'not started';
     }
 }
