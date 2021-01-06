@@ -47,5 +47,7 @@ class Handler extends ExceptionHandler
                 'message' => 'not found'
             ], 404);
         }
+
+        return parent::render($request, $e);
     }
 }

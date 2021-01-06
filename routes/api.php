@@ -19,13 +19,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-// Route::middleware('auth:api')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
 
 Route::middleware(['auth:sanctum'])->group(function () {  
-    Route::get('/user', [UserController::class, 'index']);
     Route::get('/todos', [TasksController::class, 'index']);
     Route::post('/todos', [TasksController::class, 'create']);
     Route::get('/todos/{task}', [TasksController::class, 'show']);
+    Route::put('/todos/{task}', [TasksController::class, 'update']);
+    Route::delete('/todos/{task}', [TasksController::class, 'destroy']);
+
+    Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 });

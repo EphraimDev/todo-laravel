@@ -36,17 +36,7 @@ class TasksController extends Controller
     public function create(Request $request)
     {
         try {
-            $rules = array(
-                'task' => 'required',
-                'date' => 'date_format:Y-m-d',
-                'time' => 'date_format:H:i'
-            );
-            $messages = array(
-                'task.required' => 'Name of todo is required',
-                'date.date_format' => 'Incorrect date format',
-                'time.date_format' => 'Incorrect time format'
-            );
-            $validator = Validator::make($request->all(), $rules, $messages);
+            $validator = $this->validateRequest($request);
 
             if ($validator->fails()) {
                 return response()->json([
@@ -101,18 +91,7 @@ class TasksController extends Controller
             ],
             'status' => 'success',
             'message' => 'todo retrieved successfully'
-        ], 201);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
+        ], 200);
     }
 
     /**
@@ -122,9 +101,47 @@ class TasksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Task $task)
     {
-        //
+        try {
+            $validator = $this->validateRequest($request);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'Todo update failed. Incorrect request formats'
+                ], 400);
+            }
+
+            if ($task->user_id !== request()->user()->id) {
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'Todo does not belong to authenticated user'
+                ], 400);
+            }
+
+            $task->update([
+                'task' => $request->task,
+                'note' => $request->note,
+                'date' => $request->date,
+                'time' => $request->time,
+                'status' => $request->status ?? $task->status
+            ]);
+
+            return response()->json([
+                'data' => [
+                    'todo' => $task
+                ],
+                'status' => 'success',
+                'message' => 'todo updated successfully'
+            ], 200);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Todo update failed'
+            ], 400);
+        }
     }
 
     /**
@@ -133,8 +150,37 @@ class TasksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Task $task)
     {
-        //
+        if ($task->user_id !== request()->user()->id) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Todo does not belong to authenticated user'
+            ], 400);
+        }
+        
+        $task->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Todo deleted successfully'
+        ], 400);
+    }
+
+    public function validateRequest($request)
+    {
+        $rules = array(
+            'task' => 'required',
+            'date' => 'date_format:Y-m-d',
+            'time' => 'date_format:H:i'
+        );
+        $messages = array(
+            'task.required' => 'Name of todo is required',
+            'date.date_format' => 'Incorrect date format',
+            'time.date_format' => 'Incorrect time format'
+        );
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        return $validator;
     }
 }
